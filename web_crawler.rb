@@ -1,21 +1,22 @@
 require 'net/http'
 
 def web_crawl(seed, max_depth)
-  next_tocrawl = [seed]
+  tocrawl = [seed]
   crawled = []
+  next_tocrawl = []
   depth = 0
-  while depth < max_depth && !next_tocrawl.empty?
-    tocrawl = next_tocrawl
-    tocrawl.each do |seed_link|
-      unless crawled.include?(seed_link)
-        next_tocrawl = next_tocrawl | find_all_links( get_page(seed_link) )
-        crawled << seed_link
-      end
-      next_tocrawl.delete seed_link
+  until (depth > max_depth) || (tocrawl.empty?)
+    seed = tocrawl.pop
+    unless crawled.include?(seed)
+      next_tocrawl = next_tocrawl | find_all_links( get_page(seed) )
+      crawled << seed
     end
-    depth = depth + 1
+    if tocrawl.empty?
+      tocrawl, next_tocrawl = next_tocrawl, []
+      depth += 1
+    end
   end
-  crawled = crawled + next_tocrawl
+  crawled
 end
 
 def get_page(link)
@@ -45,8 +46,8 @@ def find_all_links(page)
 end
 
 def test
-  seed = "http://www.sohu.com/"
-  (0..2).each do |depth|
+  seed = "http://www.baidu.com/"
+  (0..1).each do |depth|
     puts web_crawl(seed, depth)
     boundry
   end
