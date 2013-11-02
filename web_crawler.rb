@@ -5,10 +5,13 @@ def web_crawl(seed, max_depth)
   crawled = []
   next_tocrawl = []
   depth = 0
+  index = []
   until (depth > max_depth) || (tocrawl.empty?)
     seed = tocrawl.pop
     unless crawled.include?(seed)
-      next_tocrawl = next_tocrawl | find_all_links( get_page(seed) )
+      content = get_page(seed)
+      add_page_to_index(index, seed, content)
+      next_tocrawl = next_tocrawl | find_all_links(content)
       crawled << seed
     end
     if tocrawl.empty?
@@ -16,7 +19,24 @@ def web_crawl(seed, max_depth)
       depth += 1
     end
   end
-  crawled
+  index
+end
+
+def add_page_to_index(index, url, content)
+  words = content.split
+  words.each do |word|
+    add_url_to_index(index, word, url)
+  end
+end
+
+def add_url_to_index(index, keyword, url)
+  index.each do |entry|
+    if entry[0] == keyword
+      entry[1] << url
+      return
+    end
+  end
+  index << [keyword, [url]]
 end
 
 def get_page(link)
@@ -47,10 +67,8 @@ end
 
 def test
   seed = "http://www.baidu.com/"
-  (0..1).each do |depth|
-    puts web_crawl(seed, depth)
-    boundry
-  end
+  index = web_crawl(seed, 1)
+  index.each {|entry| p entry }
 end
 
 def boundry
