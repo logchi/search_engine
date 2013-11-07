@@ -5,7 +5,7 @@ def web_crawl(seed, max_depth)
   crawled = []
   next_tocrawl = []
   depth = 0
-  index = []
+  index = {}
   until (depth > max_depth) || (tocrawl.empty?)
     seed = tocrawl.pop
     unless crawled.include?(seed)
@@ -22,6 +22,10 @@ def web_crawl(seed, max_depth)
   index
 end
 
+def lookup(keyword, index)
+  index[keyword]
+end
+
 def add_page_to_index(index, url, content)
   words = content.split
   words.each do |word|
@@ -30,13 +34,8 @@ def add_page_to_index(index, url, content)
 end
 
 def add_url_to_index(index, keyword, url)
-  index.each do |entry|
-    if entry[0] == keyword
-      entry[1] << url
-      return
-    end
-  end
-  index << [keyword, [url]]
+  index.has_key?(keyword) ? index[keyword] <<  url 
+                          : index[keyword] = [url]
 end
 
 def get_page(link)
