@@ -5,13 +5,16 @@ def web_crawl(seed, max_depth)
   crawled = []
   next_tocrawl = []
   depth = 0
-  index = {}
+  graph = {}  # Directed graph for all crawled urls
+  index = {}  # Index for all words in the crawled pages
   until (depth > max_depth) || (tocrawl.empty?)
     seed = tocrawl.pop
     unless crawled.include?(seed)
       content = get_page(seed)
       add_page_to_index(index, seed, content)
-      next_tocrawl = next_tocrawl | find_all_links(content)
+      outlinks = find_all_links(content)
+      graph[seed] = outlinks
+      next_tocrawl = next_tocrawl | outlinks
       crawled << seed
     end
     if tocrawl.empty?
@@ -19,11 +22,35 @@ def web_crawl(seed, max_depth)
       depth += 1
     end
   end
-  index
+  return index, graph
 end
 
-def lookup(keyword, index)
-  index[keyword]
+def urank(graph)
+  total_links = graph.size
+  d = 0.8
+  depth = 10  # loop times for getting the ranks
+  ranks = {}
+  graph.each_key do |url|
+    ranks[url] = 1.0 / total_links
+  end
+  depth.times do
+    newranks = {}
+    graph.each_key do |url|
+      newrank = (1 - d) / total_links
+      graph.each do |link, outlinks|
+        if outlinks.include?(url)
+	  newrank += d * ranks[link] / outlinks.size
+	end
+      end
+      newranks[url] = newrank
+    end
+    ranks = newranks
+  end
+  ranks
+end
+
+def lookup(keyword, index, ranks)
+  index[keyword].sort_by! {|link| ranks[link] }
 end
 
 def add_page_to_index(index, url, content)
@@ -66,14 +93,9 @@ end
 
 def test
   seed = "http://www.baidu.com/"
-  index = web_crawl(seed, 1)
-  index.each {|entry| p entry }
-end
-
-def boundry
-  puts
-  3.times { print "=" * 40 + "\n" }
-  puts
+  index, graph = web_crawl(seed, 1)
+  ranks = urank(graph)
+  puts lookup("5,value", index, ranks)
 end
 
 test
